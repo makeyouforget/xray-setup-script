@@ -1,37 +1,21 @@
 #!/usr/bin/env bash
-# =============================================================================
-# Xray Multihop Setup Script
-# Architecture: Client → Server 1 (Entry) → Server 2 (Exit) → Internet
-# Protocol:     VLESS + Reality + RPRX Vision on both hops
-# =============================================================================
 
-
-# ── Colors ────────────────────────────────────────────────────────────────────
+# Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
-log()   { echo -e "${GREEN}[+]${NC} $*"; }
-info()  { echo -e "${BLUE}[*]${NC} $*"; }
-warn()  { echo -e "${YELLOW}[!]${NC} $*"; }
-error() { echo -e "${RED}[✗]${NC} $*" >&2; exit 1; }
-step()  { echo -e "\n${BOLD}${CYAN}━━━ $* ━━━${NC}"; }
+log()   { echo -e "${GREEN}$*${NC}"; }
+info()  { echo -e "${BLUE}$*${NC}"; }
+warn()  { echo -e "${YELLOW}$*${NC}"; }
+error() { echo -e "${RED}$*${NC}" >&2; exit 1; }
+step()  { echo -e "\n${BOLD}$*${NC}"; }
 
-# ── Dependency check (local) ──────────────────────────────────────────────────
+# Dependency check (local)
 for cmd in ssh scp openssl; do
     command -v "$cmd" >/dev/null 2>&1 || error "Required local tool not found: $cmd"
 done
 
-# ── Banner ────────────────────────────────────────────────────────────────────
-echo -e "${BOLD}"
-cat << 'BANNER'
- ╔══════════════════════════════════════════════════════════════╗
- ║        Xray Multihop Setup — VLESS + Reality + Vision        ║
- ║   Client → Server1 (Entry) → Server2 (Exit) → Internet       ║
- ╚══════════════════════════════════════════════════════════════╝
-BANNER
-echo -e "${NC}"
-
-# ── State file ────────────────────────────────────────────────────────────────
+# State file
 STATE_FILE="$(pwd)/xray-multihop.state"
 
 # Initialise all variables (required by set -u before state file is sourced)
@@ -43,7 +27,7 @@ OUTDIR="" DONE_INSTALL="" DONE_KEYS="" DONE_CONFIGS="" DONE_DEPLOY=""
 
 save_state() {
     cat > "$STATE_FILE" << SEOF
-# Xray Multihop state — saved $(date)
+# Xray Multihop state - saved $(date)
 S1_IP="${S1_IP}"
 S1_USER="${S1_USER}"
 S1_SSH_PORT="${S1_SSH_PORT}"
@@ -70,26 +54,28 @@ DONE_DEPLOY="${DONE_DEPLOY:-}"
 SEOF
 }
 
-# ── Resume detection ──────────────────────────────────────────────────────────
+# Resume detection
 if [[ -f "$STATE_FILE" ]]; then
-    echo -e "${YELLOW}[!]${NC} Existing state file found: ${STATE_FILE}"
+    echo -e "${YELLOW}Warning:${NC} Existing state file found: ${STATE_FILE}"
     read -r -p "  Resume previous run? [Y/n]: " _resume
     _resume="${_resume:-Y}"
     if [[ "$_resume" =~ ^[Yy]$ ]]; then
         # shellcheck source=/dev/null
         source "$STATE_FILE"
-        log "State loaded — resuming."
-        [[ -n "$DONE_INSTALL"  ]] && info "  ✓ Install step already done"
-        [[ -n "$DONE_KEYS"     ]] && info "  ✓ Key generation already done"
-        [[ -n "$DONE_CONFIGS"  ]] && info "  ✓ Config generation already done"
-        [[ -n "$DONE_DEPLOY"   ]] && info "  ✓ Deployment already done"
+        log "State loaded, resuming."
+        [[ -n "$DONE_INSTALL"  ]] && info "  Install step already done"
+        [[ -n "$DONE_KEYS"     ]] && info "  Key generation already done"
+        [[ -n "$DONE_CONFIGS"  ]] && info "  Config generation already done"
+        [[ -n "$DONE_DEPLOY"   ]] && info "  Deployment already done"
     else
         rm -f "$STATE_FILE"
-        log "Starting fresh — state file removed."
+        log "Starting fresh, state file removed."
     fi
 fi
 
-# ── Input helpers ─────────────────────────────────────────────────────────────
+# Input helpers
+random_port() { echo $(( RANDOM % 50001 + 10000 )); }
+
 prompt() {
     # prompt <var_name> <question> [default]
     local var="$1" question="$2" default="${3:-}"
@@ -101,22 +87,23 @@ prompt() {
     printf -v "$var" '%s' "$value"
 }
 
-# ── Collect server info (skip if already loaded from state) ───────────────────
+# Collect server info (skip if already loaded from state)
 if [[ -z "$S1_IP" ]]; then
-    step "Server 1 — Entry Node"
+    step "Server 1 - Entry Node"
     prompt S1_IP        "IP address"
     prompt S1_USER      "SSH user"          "root"
     prompt S1_SSH_PORT  "SSH port"          "22"
-    prompt S1_XRAY_PORT "Xray listen port"  "443"
+    prompt S1_XRAY_PORT "Xray listen port"  "443 or r=random"
+    [[ "$S1_XRAY_PORT" == "r" || "$S1_XRAY_PORT" == "random" ]] && S1_XRAY_PORT=$(random_port)
     prompt S1_SNI       "Reality SNI"       "www.microsoft.com"
 
     echo ""
-    step "Server 2 — Exit Node"
+    step "Server 2 - Exit Node"
     prompt S2_IP        "IP address"
     prompt S2_USER      "SSH user"          "root"
     prompt S2_SSH_PORT  "SSH port"          "22"
-    prompt S2_XRAY_PORT "Xray listen port"  "443"
-    prompt S2_SNI       "Reality SNI"       "www.microsoft.com"
+    prompt S2_XRAY_PORT "Xray listen port"  "443 or r=random"
+    [[ "$S2_XRAY_PORT" == "r" || "$S2_XRAY_PORT" == "random" ]] && S2_XRAY_PORT=$(random_port)
 
     save_state
 else
@@ -125,7 +112,7 @@ else
     info "  Server 2: ${S2_USER}@${S2_IP}:${S2_SSH_PORT}  (Xray :${S2_XRAY_PORT})"
 fi
 
-# ── Build SSH/SCP option strings ──────────────────────────────────────────────
+# Build SSH/SCP option strings
 S1_OPTS="-p ${S1_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
 S2_OPTS="-p ${S2_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
 S1_SCP_OPTS="-P ${S1_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
@@ -134,48 +121,48 @@ S2_SCP_OPTS="-P ${S2_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=15"
 ssh_s1() { ssh $S1_OPTS "${S1_USER}@${S1_IP}" "$@"; }
 ssh_s2() { ssh $S2_OPTS "${S2_USER}@${S2_IP}" "$@"; }
 
-# ── Test connectivity ─────────────────────────────────────────────────────────
+# Test connectivity
 step "Testing SSH Connectivity"
 
 log "Checking Server 1 (${S1_IP})..."
 if ! ssh_s1 "echo ok" >/dev/null; then
     error "Cannot connect to Server 1 (${S1_USER}@${S1_IP}:${S1_SSH_PORT}). Check IP/user/port and ensure SSH access is configured."
 fi
-log "Server 1 reachable ✓"
+log "Server 1 reachable"
 
 log "Checking Server 2 (${S2_IP})..."
 if ! ssh_s2 "echo ok" >/dev/null; then
     error "Cannot connect to Server 2 (${S2_USER}@${S2_IP}:${S2_SSH_PORT}). Check IP/user/port and ensure SSH access is configured."
 fi
-log "Server 2 reachable ✓"
+log "Server 2 reachable"
 
-# ── Working directory ─────────────────────────────────────────────────────────
+# Working directory
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 chmod 700 "$WORKDIR"
 
-# ── Install packages & Xray on a server ──────────────────────────────────────
+# Install packages & Xray on a server
 install_server() {
     local label="$1" ssh_opts="$2" user="$3" ip="$4"
-    log "Preparing ${label} (${ip}) — installing Xray..."
+    log "Preparing ${label} (${ip}) - installing Xray..."
 
     ssh $ssh_opts "${user}@${ip}" bash << 'REMOTE'
 set -euo pipefail
 
-# ── Install / update Xray-core ─────────────────────────────────────────────
+# Install / update Xray-core
 XRAY_INSTALL_SCRIPT="https://github.com/XTLS/Xray-install/raw/main/install-release.sh"
 if command -v xray >/dev/null 2>&1; then
-    echo "[*] Xray already installed: $(xray version 2>&1 | head -1)"
-    echo "[*] Checking for updates..."
+    echo "Xray already installed: $(xray version 2>&1 | head -1)"
+    echo "Checking for updates..."
     bash -c "$(curl -fsSL ${XRAY_INSTALL_SCRIPT})" @ install 2>&1 | tail -5
 else
-    echo "[*] Installing Xray-core..."
+    echo "Installing Xray-core..."
     bash -c "$(curl -fsSL ${XRAY_INSTALL_SCRIPT})" @ install 2>&1 | tail -10
 fi
 
-# ── Ensure systemd service is enabled ──────────────────────────────────────
+# Ensure systemd service is enabled
 systemctl enable xray 2>/dev/null || true
-echo "[+] Xray version: $(xray version 2>&1 | head -1)"
+echo "Xray version: $(xray version 2>&1 | head -1)"
 
 REMOTE
 }
@@ -188,10 +175,10 @@ if [[ -z "$DONE_INSTALL" ]]; then
     save_state
 else
     step "Installing Packages & Xray"
-    info "Skipping — already completed."
+    info "Skipping - already completed."
 fi
 
-# ── Generate Reality x25519 keypairs (on remote, using xray binary) ───────────
+# Generate Reality x25519 keypairs (on remote, using xray binary)
 gen_uuid() {
     if command -v uuidgen >/dev/null 2>&1; then
         uuidgen | tr '[:upper:]' '[:lower:]'
@@ -223,7 +210,7 @@ if [[ -z "$DONE_KEYS" ]]; then
     DONE_KEYS="yes"
     save_state
 else
-    info "Skipping key generation — already completed."
+    info "Skipping key generation - already completed."
 fi
 
 info "S1 Public Key: ${S1_PUBLIC_KEY}"
@@ -233,10 +220,10 @@ info "S2 Public Key: ${S2_PUBLIC_KEY}"
 info "S2 UUID:      ${S2_UUID}"
 info "S2 Short ID:  ${S2_SHORT_ID}"
 
-# ── Generate Server 1 config (Entry) ─────────────────────────────────────────
+# Generate Server 1 config (Entry)
 if [[ -n "$DONE_CONFIGS" ]]; then
     step "Generating Xray Configs"
-    info "Skipping — already completed."
+    info "Skipping - already completed."
 else
 step "Generating Xray Configs"
 log "Building Server 1 config (Entry node)..."
@@ -347,7 +334,7 @@ cat > "${WORKDIR}/server1.json" << EOF
 }
 EOF
 
-# ── Generate Server 2 config (Exit) ──────────────────────────────────────────
+# Generate Server 2 config (Exit)
 log "Building Server 2 config (Exit node)..."
 
 cat > "${WORKDIR}/server2.json" << EOF
@@ -420,7 +407,7 @@ cat > "${WORKDIR}/server2.json" << EOF
 }
 EOF
 
-log "Configs generated ✓"
+log "Configs generated"
 
 [[ -z "$OUTDIR" ]] && OUTDIR="$(pwd)/xray-multihop-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$OUTDIR"
@@ -431,7 +418,7 @@ DONE_CONFIGS="yes"
 save_state
 fi  # end of config generation block
 
-# ── Deploy configs ────────────────────────────────────────────────────────────
+# Deploy configs
 if [[ -z "$DONE_DEPLOY" ]]; then
     step "Deploying Configs"
 
@@ -446,10 +433,10 @@ if [[ -z "$DONE_DEPLOY" ]]; then
 
     ssh_s1 bash << 'REMOTE'
 mkdir -p /var/log/xray
-xray -test -config /usr/local/etc/xray/config.json && echo "[+] Config valid" || { echo "[!] Config test failed"; exit 1; }
+xray -test -config /usr/local/etc/xray/config.json && echo "Config valid" || { echo "Config test failed"; exit 1; }
 systemctl restart xray
 sleep 2
-systemctl is-active xray && echo "[+] Xray running on Server 1" || { journalctl -u xray -n 30 --no-pager; exit 1; }
+systemctl is-active xray && echo "Xray running on Server 1" || { journalctl -u xray -n 30 --no-pager; exit 1; }
 REMOTE
 
     log "Deploying to Server 2 (${S2_IP})..."
@@ -457,30 +444,28 @@ REMOTE
 
     ssh_s2 bash << 'REMOTE'
 mkdir -p /var/log/xray
-xray -test -config /usr/local/etc/xray/config.json && echo "[+] Config valid" || { echo "[!] Config test failed"; exit 1; }
+xray -test -config /usr/local/etc/xray/config.json && echo "Config valid" || { echo "Config test failed"; exit 1; }
 systemctl restart xray
 sleep 2
-systemctl is-active xray && echo "[+] Xray running on Server 2" || { journalctl -u xray -n 30 --no-pager; exit 1; }
+systemctl is-active xray && echo "Xray running on Server 2" || { journalctl -u xray -n 30 --no-pager; exit 1; }
 REMOTE
 
     DONE_DEPLOY="yes"
     save_state
 else
     step "Deploying Configs"
-    info "Skipping — already completed."
+    info "Skipping - already completed."
 fi
 
-# ── Generate client share link (VLESS URI for entry node) ────────────────────
+# Generate client share link (VLESS URI for entry node)
 # VLESS URI format: vless://uuid@host:port?security=reality&sni=...&fp=...&pbk=...&sid=...&flow=xtls-rprx-vision&type=tcp#name
 CLIENT_LINK="vless://${S1_UUID}@${S1_IP}:${S1_XRAY_PORT}?security=reality&sni=${S1_SNI}&fp=chrome&pbk=${S1_PUBLIC_KEY}&sid=${S1_SHORT_ID}&flow=xtls-rprx-vision&type=tcp#multihop-entry"
 
 cat > "${OUTDIR}/client.txt" << EOF
-══════════════════════════════════════════════════════════════════
-  Xray Multihop — Client Configuration
-  Architecture: Client → ${S1_IP} → ${S2_IP} → Internet
-══════════════════════════════════════════════════════════════════
+Xray Multihop - Client Configuration
+Architecture: Client -> ${S1_IP} -> ${S2_IP} -> Internet
 
-── Server 1 (Entry) ──────────────────────────────────────────────
+Server 1 (Entry)
   Address:       ${S1_IP}
   Port:          ${S1_XRAY_PORT}
   Protocol:      VLESS
@@ -492,23 +477,20 @@ cat > "${OUTDIR}/client.txt" << EOF
   Public Key:    ${S1_PUBLIC_KEY}
   Short ID:      ${S1_SHORT_ID}
 
-── Server 2 (Exit — internal, no client config needed) ───────────
+Server 2 (Exit - internal, no client config needed)
   Address:       ${S2_IP}
   Port:          ${S2_XRAY_PORT}
   UUID:          ${S2_UUID}
   Public Key:    ${S2_PUBLIC_KEY}
   Short ID:      ${S2_SHORT_ID}
 
-── VLESS Share Link (paste into Xray/V2RayNG/NekoBox/etc) ────────
+VLESS Share Link:
 ${CLIENT_LINK}
-
 EOF
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# Summary
 step "Done"
-echo -e "${GREEN}${BOLD}"
-echo "  Multihop setup complete!"
-echo -e "${NC}"
+log "Multihop setup complete!"
 echo -e "  ${BOLD}Entry node:${NC}  ${S1_IP}:${S1_XRAY_PORT}"
 echo -e "  ${BOLD}Exit node:${NC}   ${S2_IP}:${S2_XRAY_PORT}"
 echo ""
@@ -516,10 +498,10 @@ echo -e "  ${BOLD}Client VLESS link:${NC}"
 echo -e "  ${CYAN}${CLIENT_LINK}${NC}"
 echo ""
 echo -e "  ${BOLD}Output files saved to:${NC} ${OUTDIR}/"
-echo "    • server1.json  — entry node Xray config"
-echo "    • server2.json  — exit node Xray config"
-echo "    • client.txt    — client credentials & share link"
+echo "    server1.json  - entry node Xray config"
+ echo "    server2.json  - exit node Xray config"
+ echo "    client.txt    - client credentials & share link"
 echo ""
 
-# Clean up state file — setup fully complete
+# Clean up state file - setup fully complete
 rm -f "$STATE_FILE"

@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -e
+#!/usr/bin/env bash
 
 # Colors
 RED='\033[0;31m'
@@ -13,7 +11,8 @@ NC='\033[0m'
 # Defaults
 SNI="icloud.com"
 FINGERPRINT="chrome"
-PORT=""
+PORT="443"
+RANDOM_PORT=false
 LINK_NAME=""
 
 # Help
@@ -25,7 +24,8 @@ print_usage() {
     echo "  -f, --fingerprint <fp>   TLS fingerprint (default: chrome)"
     echo "                          Supported: chrome, firefox, safari, ios, android,"
     echo "                          edge, 360, qq, random, randomized"
-    echo "  -p, --port <port>        Listening port (default: random 10000-60000)"
+    echo "  -p, --port <port>        Listening port (default: 443)"
+    echo "  -r, --random-port        Use a random port in range 10000-60000"
     echo "  -n, --name <name>        Link name (default: server IP)"
     echo "  -h, --help               Show this help message"
 }
@@ -36,6 +36,7 @@ while [[ $# -gt 0 ]]; do
         -s|--sni)          SNI="$2";         shift 2 ;;
         -f|--fingerprint)  FINGERPRINT="$2"; shift 2 ;;
         -p|--port)         PORT="$2";        shift 2 ;;
+        -r|--random-port)  RANDOM_PORT=true;  shift   ;;
         -n|--name)         LINK_NAME="$2";   shift 2 ;;
         -h|--help)      print_usage;      exit 0  ;;
         *)
@@ -46,8 +47,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Generate a random port in range 10000–60000 if none was specified
-if [[ -z "$PORT" ]]; then
+# If --random-port was requested, override whatever port is set
+if [[ "$RANDOM_PORT" == true ]]; then
     PORT=$(( RANDOM % 50001 + 10000 ))
 fi
 

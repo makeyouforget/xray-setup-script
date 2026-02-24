@@ -50,7 +50,8 @@ bash setup.sh [OPTIONS]
 |---|---|---|
 | `-s`, `--sni <domain>` | SNI domain for Reality | `icloud.com` |
 | `-f`, `--fingerprint <fp>` | TLS fingerprint | `chrome` |
-| `-p`, `--port <port>` | Listening port | Random (10000–60000) |
+| `-p`, `--port <port>` | Listening port | `443` |
+| `-r`, `--random-port` | Use a random port (10000–60000) | — |
 | `-n`, `--name <name>` | Link name shown in client | Server IP |
 | `-h`, `--help` | Show help | — |
 
@@ -67,8 +68,11 @@ bash setup.sh [OPTIONS]
 ### Example
 
 ```bash
-# Defaults — random port, icloud.com SNI, chrome fingerprint
+# Defaults — port 443, icloud.com SNI, chrome fingerprint
 bash setup.sh
+
+# Random port
+bash setup.sh --random-port
 
 # Custom SNI and port
 bash setup.sh --sni www.microsoft.com --port 8443 --name "my-vps"
@@ -121,7 +125,7 @@ The script is interactive — it will prompt for each server's details.
 | IP address | Public IP of the server | — |
 | SSH user | User to connect as | `root` |
 | SSH port | SSH listening port | `22` |
-| Xray listen port | Port Xray will bind to | `443` |
+| Xray listen port | Port Xray will bind to; enter `r` for a random port (10000–60000) | `443` |
 | Reality SNI | Domain to impersonate | `www.microsoft.com` |
 
 ### What it does
