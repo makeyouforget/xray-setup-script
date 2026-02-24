@@ -21,6 +21,15 @@ Bash scripts for deploying [Xray-core](https://github.com/XTLS/Xray-core) with *
 - Root or `sudo` access
 - Run **on the server** itself
 
+### Required packages
+
+Before running the script, update the system and install the required packages on the server:
+
+```bash
+apt-get update -y && apt-get upgrade -y
+apt-get install -y curl openssl unzip wget
+```
+
 ### Usage
 
 ```bash
@@ -49,13 +58,11 @@ sudo bash setup.sh [OPTIONS]
 
 ### What it does
 
-1. Updates the OS (`apt-get update && upgrade`)
-2. Installs required packages (`curl`, `openssl`, `unzip`, `wget`)
-3. Installs Xray-core via the official install script
-4. Generates a UUID, x25519 keypair, and a random short ID
-5. Writes the Xray config to `/usr/local/etc/xray/config.json`
-6. Restarts and validates the Xray systemd service
-7. Prints a ready-to-import **VLESS share link**
+1. Installs Xray-core via the official install script
+2. Generates a UUID, x25519 keypair, and a random short ID
+3. Writes the Xray config to `/usr/local/etc/xray/config.json`
+4. Restarts and validates the Xray systemd service
+5. Prints a ready-to-import **VLESS share link**
 
 ### Example
 
@@ -85,6 +92,15 @@ The client only connects to Server 1. Server 1 forwards all traffic to Server 2,
 - **Both servers:** Debian/Ubuntu with SSH access (root or sudo user)
 - SSH key-based authentication recommended (no password prompts during deployment)
 
+### Required packages
+
+Before running the script, install the required packages on **each server**:
+
+```bash
+apt-get update -qq
+apt-get install -y curl wget unzip ca-certificates net-tools iproute2 iptables socat cron logrotate
+```
+
 ### Usage
 
 ```bash
@@ -113,7 +129,7 @@ The script is interactive — it will prompt for each server's details.
 1. Checks local dependencies (`ssh`, `scp`, `openssl`)
 2. Collects connection details for both servers interactively
 3. Tests SSH connectivity to both servers
-4. Installs required packages and Xray-core on **both servers** remotely
+4. Installs Xray-core on **both servers** remotely
 5. Generates x25519 keypairs, UUIDs, and short IDs for each hop
 6. Builds Xray configs:
    - **Server 1** — inbound from client, outbound to Server 2
@@ -134,18 +150,6 @@ Saved to `./xray-multihop-<timestamp>/`:
 ### Resume support
 
 If the script is interrupted, a `xray-multihop.state` file is saved in the current directory. Re-running the script will offer to resume from where it left off, skipping already-completed steps.
-
----
-
-## Client Import
-
-Both scripts output a **VLESS URI** that can be imported into:
-
-- [v2rayNG](https://github.com/2dust/v2rayNG) (Android)
-- [NekoBox](https://github.com/MatsuriDayo/NekoBoxForAndroid) (Android)
-- [Happ](https://apps.apple.com/app/id6443918955) / [Streisand](https://apps.apple.com/app/id6450534064) (iOS)
-- [v2rayN](https://github.com/2dust/v2rayN) (Windows)
-- [FoXray](https://apps.apple.com/app/id6448898396) / [Furious](https://github.com/LorenEteval/Furious) (macOS)
 
 ---
 

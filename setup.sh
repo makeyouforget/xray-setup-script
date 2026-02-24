@@ -57,16 +57,6 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Update OS and install required packages
-echo -e "${YELLOW}Updating package lists and upgrading system...${NC}"
-apt-get update -y
-apt-get upgrade -y
-
-echo ""
-echo -e "${YELLOW}Installing required packages...${NC}"
-apt-get install -y curl openssl unzip wget
-echo -e "${GREEN}Packages installed.${NC}"
-
 # Install Xray
 if ! command -v xray &>/dev/null; then
     echo -e "${YELLOW}Xray not found - installing via official script...${NC}"

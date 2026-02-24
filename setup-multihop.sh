@@ -157,19 +157,10 @@ chmod 700 "$WORKDIR"
 # ── Install packages & Xray on a server ──────────────────────────────────────
 install_server() {
     local label="$1" ssh_opts="$2" user="$3" ip="$4"
-    log "Preparing ${label} (${ip}) — installing packages & Xray..."
+    log "Preparing ${label} (${ip}) — installing Xray..."
 
     ssh $ssh_opts "${user}@${ip}" bash << 'REMOTE'
 set -euo pipefail
-
-export DEBIAN_FRONTEND=noninteractive
-
-# ── Required packages ──────────────────────────────────────────────────────
-apt-get update -qq
-apt-get install -y -qq \
-    curl wget unzip ca-certificates \
-    net-tools iproute2 iptables \
-    socat cron logrotate
 
 # ── Install / update Xray-core ─────────────────────────────────────────────
 XRAY_INSTALL_SCRIPT="https://github.com/XTLS/Xray-install/raw/main/install-release.sh"
