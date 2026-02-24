@@ -34,13 +34,13 @@ apt-get install -y curl openssl unzip wget
 
 ```bash
 # One-liner
-sudo bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-script/main/setup.sh)
+sudo bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/main/setup.sh)
 
 # With options
-sudo bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-script/main/setup.sh) --sni www.microsoft.com --port 8443
+sudo bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/main/setup.sh) --sni www.microsoft.com --port 8443
 
 # Or download and run
-curl -L -o setup.sh https://raw.githubusercontent.com/makeyouforget/xray-setup-script/main/setup.sh
+curl -L -o setup.sh https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/main/setup.sh
 sudo bash setup.sh [OPTIONS]
 ```
 
@@ -105,10 +105,10 @@ apt-get install -y curl wget unzip ca-certificates net-tools iproute2 iptables s
 
 ```bash
 # One-liner
-bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-script/main/setup-multihop.sh)
+bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/main/setup-multihop.sh)
 
 # Or download and run
-curl -L -o setup-multihop.sh https://raw.githubusercontent.com/makeyouforget/xray-setup-script/main/setup-multihop.sh
+curl -L -o setup-multihop.sh https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/main/setup-multihop.sh
 bash setup-multihop.sh
 ```
 
