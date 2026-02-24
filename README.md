@@ -26,22 +26,22 @@ Bash scripts for deploying [Xray-core](https://github.com/XTLS/Xray-core) with *
 Before running the script, update the system and install the required packages on the server:
 
 ```bash
-apt-get update -y && apt-get upgrade -y
-apt-get install -y curl openssl unzip wget
+apt update -y && apt upgrade -y
+apt install -y curl openssl unzip wget
 ```
 
 ### Usage
 
 ```bash
 # One-liner
-sudo bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/refs/heads/main/setup.sh)
+bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/refs/heads/main/setup.sh)
 
 # With options
-sudo bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/refs/heads/main/setup.sh) --sni www.microsoft.com --port 8443
+bash <(curl -L https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/refs/heads/main/setup.sh) --sni www.microsoft.com --port 8443
 
 # Or download and run
 curl -L -o setup.sh https://raw.githubusercontent.com/makeyouforget/xray-setup-scripts/refs/heads/main/setup.sh
-sudo bash setup.sh [OPTIONS]
+bash setup.sh [OPTIONS]
 ```
 
 ### Options
@@ -68,10 +68,10 @@ sudo bash setup.sh [OPTIONS]
 
 ```bash
 # Defaults — random port, icloud.com SNI, chrome fingerprint
-sudo bash setup.sh
+bash setup.sh
 
 # Custom SNI and port
-sudo bash setup.sh --sni www.microsoft.com --port 8443 --name "my-vps"
+bash setup.sh --sni www.microsoft.com --port 8443 --name "my-vps"
 ```
 
 ---
@@ -97,8 +97,8 @@ The client only connects to Server 1. Server 1 forwards all traffic to Server 2,
 Before running the script, install the required packages on **each server**:
 
 ```bash
-apt-get update -qq
-apt-get install -y curl wget unzip ca-certificates net-tools iproute2 iptables socat cron logrotate
+apt update -qq
+apt install -y curl wget unzip ca-certificates net-tools iproute2 iptables socat cron logrotate
 ```
 
 ### Usage
