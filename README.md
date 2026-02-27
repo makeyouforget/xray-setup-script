@@ -19,7 +19,7 @@ apt install -y curl openssl docker.io
 ### 2. Run the setup script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/makeyouforget/xray-setup-script/refs/heads/main/setup.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/makeyouforget/xray-setup-script/refs/heads/main/setup.sh | bash
 ```
 
 Or with custom options:
@@ -27,7 +27,7 @@ Or with custom options:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/makeyouforget/xray-setup-script/refs/heads/main/setup.sh -o setup.sh
 chmod +x setup.sh
-sudo ./setup.sh --port 443 --dest 1.1.1.1:443 --sni cloudflare.com --name xray
+./setup.sh --port 443 --dest 1.1.1.1:443 --sni cloudflare.com --name xray
 ```
 
 ## Options
@@ -55,5 +55,5 @@ sudo ./setup.sh --port 443 --dest 1.1.1.1:443 --sni cloudflare.com --name xray
 apt install -y podman
 curl -fsSL https://raw.githubusercontent.com/makeyouforget/xray-setup-script/refs/heads/main/setup.sh -o setup.sh
 chmod +x setup.sh
-sudo ./setup.sh --runtime podman
+./setup.sh --runtime podman
 ```
