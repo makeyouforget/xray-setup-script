@@ -81,6 +81,7 @@ ok "Short ID:    $SHORT_ID"
 
 # build config
 info "Writing config to $CONFIG_FILE ..."
+rm -rf "$CONFIG_DIR"
 mkdir -p "$CONFIG_DIR"
 
 cat > "$CONFIG_FILE" <<EOF
