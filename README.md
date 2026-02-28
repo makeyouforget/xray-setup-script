@@ -1,6 +1,6 @@
 # xray-setup-script
 
-One-command [VLESS + Reality](https://github.com/XTLS/Xray-core) server setup using Docker / Podman.
+One-command [VLESS + Reality](https://github.com/XTLS/Xray-core) server setup using Docker.
 
 ## Requirements
 
