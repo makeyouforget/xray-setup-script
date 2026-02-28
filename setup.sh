@@ -78,7 +78,6 @@ ok "Short ID:    $SHORT_ID"
 
 # build config
 info "Writing config to $CONFIG_FILE ..."
-rm -rf "$CONFIG_DIR"
 mkdir -p "$CONFIG_DIR"
 
 cat > "$CONFIG_FILE" <<EOF
@@ -140,6 +139,17 @@ docker run -d \
     run -c /etc/xray/config.json
 
 ok "Container started (restart policy: always)."
+
+# verify container is still running
+info "Verifying container startup..."
+sleep 2
+STATUS=$(docker inspect --format='{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "missing")
+if [[ "$STATUS" != "running" ]]; then
+    echo -e "${RED}[!]${RESET} Container is not running (status: ${STATUS}). Logs:" >&2
+    docker logs "$CONTAINER_NAME" >&2
+    exit 1
+fi
+ok "Container is running."
 
 # detect public IP
 info "Detecting server IP..."
